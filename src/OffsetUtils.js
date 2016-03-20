@@ -16,11 +16,24 @@ export function getNodeClientOffset(node) {
   return { x: left, y: top };
 }
 
+export function isNodeInIframe(node) {
+  var win = node && node.ownerDocument.defaultView;
+  return !!(win && win.top !== win);
+}
+
 export function getEventClientOffset(e) {
-  return {
+  var offset = {
     x: e.clientX,
     y: e.clientY
   };
+
+  if (isNodeInIframe(e.target)) {
+    var iframeOffset = $(e.target.ownerDocument.defaultView.frameElement).offset();
+    offset.x += iframeOffset.left;
+    offset.y += iframeOffset.top;
+  }
+
+  return offset;
 }
 
 export function getDragPreviewOffset(sourceNode, dragPreview, clientOffset, anchorPoint) {

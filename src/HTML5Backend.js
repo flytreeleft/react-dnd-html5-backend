@@ -2,7 +2,7 @@ import defaults from 'lodash/defaults';
 import shallowEqual from './shallowEqual';
 import EnterLeaveCounter from './EnterLeaveCounter';
 import { isFirefox } from './BrowserDetector';
-import { getNodeClientOffset, getEventClientOffset, getDragPreviewOffset } from './OffsetUtils';
+import { getNodeClientOffset, getEventClientOffset, getDragPreviewOffset, isNodeInIframe } from './OffsetUtils';
 import { createNativeDragSource, matchNativeItemType } from './NativeDragSources';
 import * as NativeTypes from './NativeTypes';
 
@@ -103,7 +103,33 @@ export default class HTML5Backend {
     node.addEventListener('dragstart', handleDragStart);
     node.addEventListener('selectstart', handleSelectStart);
 
+    var iframe = isNodeInIframe(node) ? node.ownerDocument.defaultView : null;
+    if (iframe) {
+      if (!iframe.dndInIframeRef) {
+        iframe.dndInIframeRef = 0;
+        iframe.addEventListener('dragstart', this.handleTopDragStartCapture, true);
+        iframe.addEventListener('dragend', this.handleTopDragEndCapture, true);
+        iframe.addEventListener('dragenter', this.handleTopDragEnterCapture, true);
+        iframe.addEventListener('dragleave', this.handleTopDragLeaveCapture, true);
+        iframe.addEventListener('dragover', this.handleTopDragOverCapture, true);
+        iframe.addEventListener('drop', this.handleTopDropCapture, true);
+      }
+      iframe.dndInIframeRef++;
+    }
+
     return () => {
+      if (iframe) {
+        iframe.dndInIframeRef--;
+        if (iframe.dndInIframeRef <= 0) {
+          iframe.removeEventListener('dragstart', this.handleTopDragStartCapture, true);
+          iframe.removeEventListener('dragend', this.handleTopDragEndCapture, true);
+          iframe.removeEventListener('dragenter', this.handleTopDragEnterCapture, true);
+          iframe.removeEventListener('dragleave', this.handleTopDragLeaveCapture, true);
+          iframe.removeEventListener('dragover', this.handleTopDragOverCapture, true);
+          iframe.removeEventListener('drop', this.handleTopDropCapture, true);
+        }
+      }
+
       delete this.sourceNodes[sourceId];
       delete this.sourceNodeOptions[sourceId];
 
@@ -122,7 +148,33 @@ export default class HTML5Backend {
     node.addEventListener('dragover', handleDragOver);
     node.addEventListener('drop', handleDrop);
 
+    var iframe = isNodeInIframe(node) ? node.ownerDocument.defaultView : null;
+    if (iframe) {
+      if (!iframe.dndInIframeRef) {
+        iframe.dndInIframeRef = 0;
+        iframe.addEventListener('dragstart', this.handleTopDragStartCapture, true);
+        iframe.addEventListener('dragend', this.handleTopDragEndCapture, true);
+        iframe.addEventListener('dragenter', this.handleTopDragEnterCapture, true);
+        iframe.addEventListener('dragleave', this.handleTopDragLeaveCapture, true);
+        iframe.addEventListener('dragover', this.handleTopDragOverCapture, true);
+        iframe.addEventListener('drop', this.handleTopDropCapture, true);
+      }
+      iframe.dndInIframeRef++;
+    }
+
     return () => {
+      if (iframe) {
+        iframe.dndInIframeRef--;
+        if (iframe.dndInIframeRef <= 0) {
+          iframe.removeEventListener('dragstart', this.handleTopDragStartCapture, true);
+          iframe.removeEventListener('dragend', this.handleTopDragEndCapture, true);
+          iframe.removeEventListener('dragenter', this.handleTopDragEnterCapture, true);
+          iframe.removeEventListener('dragleave', this.handleTopDragLeaveCapture, true);
+          iframe.removeEventListener('dragover', this.handleTopDragOverCapture, true);
+          iframe.removeEventListener('drop', this.handleTopDropCapture, true);
+        }
+      }
+
       node.removeEventListener('dragenter', handleDragEnter);
       node.removeEventListener('dragover', handleDragOver);
       node.removeEventListener('drop', handleDrop);
@@ -259,6 +311,12 @@ export default class HTML5Backend {
 
   handleDragStart(e, sourceId) {
     this.dragStartSourceIds.unshift(sourceId);
+
+    // NOTE: parent window will not receive event from iframe,
+    // so we should call handle directly
+    if (isNodeInIframe(e.target)) {
+      this.handleTopDragStart(e);
+    }
   }
 
   handleTopDragStart(e) {
@@ -375,6 +433,12 @@ export default class HTML5Backend {
 
   handleDragEnter(e, targetId) {
     this.dragEnterTargetIds.unshift(targetId);
+
+    // NOTE: parent window will not receive event from iframe,
+    // so we should call handle directly
+    if (isNodeInIframe(e.target)) {
+      this.handleTopDragEnter(e);
+    }
   }
 
   handleTopDragEnter(e) {
@@ -413,6 +477,12 @@ export default class HTML5Backend {
 
   handleDragOver(e, targetId) {
     this.dragOverTargetIds.unshift(targetId);
+
+    // NOTE: parent window will not receive event from iframe,
+    // so we should call handle directly
+    if (isNodeInIframe(e.target)) {
+      this.handleTopDragOver(e);
+    }
   }
 
   handleTopDragOver(e) {
@@ -480,6 +550,12 @@ export default class HTML5Backend {
 
   handleDrop(e, targetId) {
     this.dropTargetIds.unshift(targetId);
+
+    // NOTE: parent window will not receive event from iframe,
+    // so we should call handle directly
+    if (isNodeInIframe(e.target)) {
+      this.handleTopDrop(e);
+    }
   }
 
   handleTopDrop(e) {
