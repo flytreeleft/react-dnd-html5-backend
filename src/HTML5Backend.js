@@ -2,9 +2,10 @@ import defaults from 'lodash/defaults';
 import shallowEqual from './shallowEqual';
 import EnterLeaveCounter from './EnterLeaveCounter';
 import { isFirefox } from './BrowserDetector';
-import { getNodeClientOffset, getEventClientOffset, getDragPreviewOffset, isNodeInIframe } from './OffsetUtils';
+import { getNodeClientOffset, getEventClientOffset, getDragPreviewOffset } from './OffsetUtils';
 import { createNativeDragSource, matchNativeItemType } from './NativeDragSources';
 import * as NativeTypes from './NativeTypes';
+import { isNodeInIframe, isNodeInDoc, getWindow } from './DOM';
 
 export default class HTML5Backend {
   constructor(manager) {
@@ -82,6 +83,31 @@ export default class HTML5Backend {
     target.removeEventListener('drop', this.handleTopDropCapture, true);
   }
 
+  addTopCaptureEventListeners(target) {
+    if (!target.dragDropTopCaptureRef) {
+      target.dragDropTopCaptureRef = 0;
+      target.addEventListener('dragstart', this.handleTopDragStartCapture, true);
+      target.addEventListener('dragend', this.handleTopDragEndCapture, true);
+      target.addEventListener('dragenter', this.handleTopDragEnterCapture, true);
+      target.addEventListener('dragleave', this.handleTopDragLeaveCapture, true);
+      target.addEventListener('dragover', this.handleTopDragOverCapture, true);
+      target.addEventListener('drop', this.handleTopDropCapture, true);
+    }
+    target.dragDropTopCaptureRef++;
+  }
+
+  removeTopCaptureEventListeners(target) {
+    target.dragDropTopCaptureRef && target.dragDropTopCaptureRef--;
+    if (!target.dragDropTopCaptureRef) {
+      target.removeEventListener('dragstart', this.handleTopDragStartCapture, true);
+      target.removeEventListener('dragend', this.handleTopDragEndCapture, true);
+      target.removeEventListener('dragenter', this.handleTopDragEnterCapture, true);
+      target.removeEventListener('dragleave', this.handleTopDragLeaveCapture, true);
+      target.removeEventListener('dragover', this.handleTopDragOverCapture, true);
+      target.removeEventListener('drop', this.handleTopDropCapture, true);
+    }
+  }
+
   connectDragPreview(sourceId, node, options) {
     this.sourcePreviewNodeOptions[sourceId] = options;
     this.sourcePreviewNodes[sourceId] = node;
@@ -103,32 +129,11 @@ export default class HTML5Backend {
     node.addEventListener('dragstart', handleDragStart);
     node.addEventListener('selectstart', handleSelectStart);
 
-    var iframe = isNodeInIframe(node) ? node.ownerDocument.defaultView : null;
-    if (iframe) {
-      if (!iframe.dndInIframeRef) {
-        iframe.dndInIframeRef = 0;
-        iframe.addEventListener('dragstart', this.handleTopDragStartCapture, true);
-        iframe.addEventListener('dragend', this.handleTopDragEndCapture, true);
-        iframe.addEventListener('dragenter', this.handleTopDragEnterCapture, true);
-        iframe.addEventListener('dragleave', this.handleTopDragLeaveCapture, true);
-        iframe.addEventListener('dragover', this.handleTopDragOverCapture, true);
-        iframe.addEventListener('drop', this.handleTopDropCapture, true);
-      }
-      iframe.dndInIframeRef++;
-    }
+    var iframe = isNodeInIframe(node) ? getWindow(node) : null;
+    iframe && this.addTopCaptureEventListeners(iframe);
 
     return () => {
-      if (iframe) {
-        iframe.dndInIframeRef--;
-        if (iframe.dndInIframeRef <= 0) {
-          iframe.removeEventListener('dragstart', this.handleTopDragStartCapture, true);
-          iframe.removeEventListener('dragend', this.handleTopDragEndCapture, true);
-          iframe.removeEventListener('dragenter', this.handleTopDragEnterCapture, true);
-          iframe.removeEventListener('dragleave', this.handleTopDragLeaveCapture, true);
-          iframe.removeEventListener('dragover', this.handleTopDragOverCapture, true);
-          iframe.removeEventListener('drop', this.handleTopDropCapture, true);
-        }
-      }
+      iframe && this.removeTopCaptureEventListeners(iframe);
 
       delete this.sourceNodes[sourceId];
       delete this.sourceNodeOptions[sourceId];
@@ -148,32 +153,11 @@ export default class HTML5Backend {
     node.addEventListener('dragover', handleDragOver);
     node.addEventListener('drop', handleDrop);
 
-    var iframe = isNodeInIframe(node) ? node.ownerDocument.defaultView : null;
-    if (iframe) {
-      if (!iframe.dndInIframeRef) {
-        iframe.dndInIframeRef = 0;
-        iframe.addEventListener('dragstart', this.handleTopDragStartCapture, true);
-        iframe.addEventListener('dragend', this.handleTopDragEndCapture, true);
-        iframe.addEventListener('dragenter', this.handleTopDragEnterCapture, true);
-        iframe.addEventListener('dragleave', this.handleTopDragLeaveCapture, true);
-        iframe.addEventListener('dragover', this.handleTopDragOverCapture, true);
-        iframe.addEventListener('drop', this.handleTopDropCapture, true);
-      }
-      iframe.dndInIframeRef++;
-    }
+    var iframe = isNodeInIframe(node) ? getWindow(node) : null;
+    iframe && this.addTopCaptureEventListeners(iframe);
 
     return () => {
-      if (iframe) {
-        iframe.dndInIframeRef--;
-        if (iframe.dndInIframeRef <= 0) {
-          iframe.removeEventListener('dragstart', this.handleTopDragStartCapture, true);
-          iframe.removeEventListener('dragend', this.handleTopDragEndCapture, true);
-          iframe.removeEventListener('dragenter', this.handleTopDragEnterCapture, true);
-          iframe.removeEventListener('dragleave', this.handleTopDragLeaveCapture, true);
-          iframe.removeEventListener('dragover', this.handleTopDragOverCapture, true);
-          iframe.removeEventListener('drop', this.handleTopDropCapture, true);
-        }
-      }
+      iframe && this.removeTopCaptureEventListeners(iframe);
 
       node.removeEventListener('dragenter', handleDragEnter);
       node.removeEventListener('dragover', handleDragOver);
@@ -253,7 +237,7 @@ export default class HTML5Backend {
 
   endDragIfSourceWasRemovedFromDOM() {
     const node = this.currentDragSourceNode;
-    if (document.body.contains(node)) {
+    if (isNodeInDoc(node)) {
       return;
     }
 
@@ -279,7 +263,8 @@ export default class HTML5Backend {
       this.currentDragSourceNode = null;
       this.currentDragSourceNodeOffset = null;
       this.currentDragSourceNodeOffsetChanged = false;
-      window.removeEventListener('mousemove', this.endDragIfSourceWasRemovedFromDOM, true);
+
+      window.addEventListener('mousemove', this.endDragIfSourceWasRemovedFromDOM, true);
       return true;
     }
 
@@ -321,7 +306,11 @@ export default class HTML5Backend {
 
   handleTopDragStart(e) {
     const { dragStartSourceIds } = this;
-    this.dragStartSourceIds = null;
+    this.dragStartSourceIds = [];
+
+    if (this.monitor.isDragging()) {
+      return;
+    }
 
     const clientOffset = getEventClientOffset(e);
 
@@ -445,7 +434,7 @@ export default class HTML5Backend {
     const { dragEnterTargetIds } = this;
     this.dragEnterTargetIds = [];
 
-    if (!this.monitor.isDragging()) {
+    if (!this.monitor.isDragging() || this.monitor.didDrop()) {
       // This is probably a native item type we don't understand.
       return;
     }
@@ -489,7 +478,7 @@ export default class HTML5Backend {
     const { dragOverTargetIds } = this;
     this.dragOverTargetIds = [];
 
-    if (!this.monitor.isDragging()) {
+    if (!this.monitor.isDragging() || this.monitor.didDrop()) {
       // This is probably a native item type we don't understand.
       // Prevent default "drop and blow away the whole document" action.
       e.preventDefault();
