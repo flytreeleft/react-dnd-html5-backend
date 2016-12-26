@@ -1,10 +1,10 @@
 export function isNodeInDoc(node) {
-  var doc = !isNodeInIframe(node) ? document.documentElement : node.ownerDocument.documentElement;
+  var doc = !isInIframe(node) ? document.documentElement : node.ownerDocument.documentElement;
   var parent = node && node.parentNode;
   return doc === node || doc === parent || !!(parent && parent.nodeType === 1 && doc.contains(parent));
 }
 
-export function isNodeInIframe(node) {
+export function isInIframe(node) {
   var win = node && node.ownerDocument.defaultView;
   return !!(win && win.top !== win);
 }
@@ -36,4 +36,10 @@ export function getDocument(target) {
   var win = getWindow(target);
 
   return win ? win.document : null;
+}
+
+export function getIframeElement(node) {
+  var win = getWindow(node);
+
+  return win ? win.frameElement : null;
 }

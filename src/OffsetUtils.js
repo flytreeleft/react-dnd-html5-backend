@@ -1,5 +1,6 @@
 import { isSafari, isFirefox } from './BrowserDetector';
 import MonotonicInterpolant from './MonotonicInterpolant';
+import { isInIframe, getIframeElement } from './DOM';
 
 const ELEMENT_NODE = 1;
 
@@ -21,6 +22,14 @@ export function getEventClientOffset(e) {
     x: e.clientX,
     y: e.clientY
   };
+
+  if (isInIframe(e.target)) {
+    var iframe = getIframeElement(e.target);
+    var iframeOffset = getNodeClientOffset(iframe) || {x: 0, y: 0};
+
+    offset.x += iframeOffset.x;
+    offset.y += iframeOffset.y;
+  }
 
   return offset;
 }

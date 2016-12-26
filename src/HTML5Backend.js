@@ -5,7 +5,7 @@ import { isFirefox } from './BrowserDetector';
 import { getNodeClientOffset, getEventClientOffset, getDragPreviewOffset } from './OffsetUtils';
 import { createNativeDragSource, matchNativeItemType } from './NativeDragSources';
 import * as NativeTypes from './NativeTypes';
-import { isNodeInIframe, isNodeInDoc, getWindow } from './DOM';
+import { isInIframe, isNodeInDoc, getWindow } from './DOM';
 
 export default class HTML5Backend {
   constructor(manager) {
@@ -129,7 +129,7 @@ export default class HTML5Backend {
     node.addEventListener('dragstart', handleDragStart);
     node.addEventListener('selectstart', handleSelectStart);
 
-    var iframe = isNodeInIframe(node) ? getWindow(node) : null;
+    var iframe = isInIframe(node) ? getWindow(node) : null;
     iframe && this.addTopCaptureEventListeners(iframe);
 
     return () => {
@@ -153,7 +153,7 @@ export default class HTML5Backend {
     node.addEventListener('dragover', handleDragOver);
     node.addEventListener('drop', handleDrop);
 
-    var iframe = isNodeInIframe(node) ? getWindow(node) : null;
+    var iframe = isInIframe(node) ? getWindow(node) : null;
     iframe && this.addTopCaptureEventListeners(iframe);
 
     return () => {
@@ -299,7 +299,7 @@ export default class HTML5Backend {
 
     // NOTE: parent window will not receive event from iframe,
     // so we should call handle directly
-    if (isNodeInIframe(e.target)) {
+    if (isInIframe(e.target)) {
       this.handleTopDragStart(e);
     }
   }
@@ -425,7 +425,7 @@ export default class HTML5Backend {
 
     // NOTE: parent window will not receive event from iframe,
     // so we should call handle directly
-    if (isNodeInIframe(e.target)) {
+    if (isInIframe(e.target)) {
       this.handleTopDragEnter(e);
     }
   }
@@ -469,7 +469,7 @@ export default class HTML5Backend {
 
     // NOTE: parent window will not receive event from iframe,
     // so we should call handle directly
-    if (isNodeInIframe(e.target)) {
+    if (isInIframe(e.target)) {
       this.handleTopDragOver(e);
     }
   }
@@ -542,7 +542,7 @@ export default class HTML5Backend {
 
     // NOTE: parent window will not receive event from iframe,
     // so we should call handle directly
-    if (isNodeInIframe(e.target)) {
+    if (isInIframe(e.target)) {
       this.handleTopDrop(e);
     }
   }
