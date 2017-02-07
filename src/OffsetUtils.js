@@ -1,6 +1,7 @@
+import round from 'lodash/round';
 import { isSafari, isFirefox } from './BrowserDetector';
 import MonotonicInterpolant from './MonotonicInterpolant';
-import { isInIframe, getIframeElement } from './DOM';
+import { isInIframe, getIframeElement, getWindow } from './DOM';
 
 const ELEMENT_NODE = 1;
 
@@ -26,9 +27,14 @@ export function getEventClientOffset(e) {
   if (isInIframe(e.target)) {
     var iframe = getIframeElement(e.target);
     var iframeOffset = getNodeClientOffset(iframe) || {x: 0, y: 0};
+    // Calculate the zoom factor of iframe.
+    var win = getWindow(iframe);
+    var viewWidth = iframe.getBoundingClientRect().width;
+    var actualWidth = parseFloat(win.getComputedStyle(iframe).width);
+    var zoom = round(viewWidth / actualWidth, 2);
 
-    offset.x += iframeOffset.x;
-    offset.y += iframeOffset.y;
+    offset.x = offset.x * zoom + iframeOffset.x;
+    offset.y = offset.y * zoom + iframeOffset.y;
   }
 
   return offset;
