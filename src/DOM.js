@@ -1,12 +1,15 @@
 export function isNodeInDoc(node) {
-  var doc = !isInIframe(node) ? document.documentElement : node.ownerDocument.documentElement;
+  var doc = getDocument(isIframe(node) ? node.ownerDocument : node);
+  var docEl = doc && doc.documentElement;
   var parent = node && node.parentNode;
-  return doc === node || doc === parent || !!(parent && parent.nodeType === 1 && doc.contains(parent));
+
+  return docEl === node || docEl === parent ||
+         !!(parent && parent.nodeType === 1 && docEl && docEl.contains(parent));
 }
 
 export function isInIframe(node) {
-  var win = node && node.ownerDocument.defaultView;
-  return !!(win && win.top !== win);
+  var win = getWindow(node);
+  return !!win && win.top !== win;
 }
 
 export function isIframe(node) {
@@ -23,9 +26,9 @@ export function getWindow(target) {
     win = target;
   } else if (isIframe(target)) {
     win = target.contentWindow || target.contentDocument;
-  } else if (target instanceof Document) {
+  } else if (target.defaultView) {
     win = target.defaultView;
-  } else {
+  } else if (target.ownerDocument) {
     win = target.ownerDocument.defaultView;
   }
 
