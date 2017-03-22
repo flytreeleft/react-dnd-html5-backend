@@ -264,7 +264,7 @@ export default class HTML5Backend {
       this.currentDragSourceNodeOffset = null;
       this.currentDragSourceNodeOffsetChanged = false;
 
-      window.addEventListener('mousemove', this.endDragIfSourceWasRemovedFromDOM, true);
+      window.removeEventListener('mousemove', this.endDragIfSourceWasRemovedFromDOM, true);
       return true;
     }
 
@@ -290,7 +290,11 @@ export default class HTML5Backend {
   }
 
   handleTopDragStartCapture() {
-    this.clearCurrentDragSourceNode();
+    // NOTE: the previous dragged element maybe was removed before it can fire dragend event,
+    // so clear the previous drag source and do endDrag.
+    if (this.clearCurrentDragSourceNode()) {
+      this.actions.endDrag();
+    }
     this.dragStartSourceIds = [];
   }
 
