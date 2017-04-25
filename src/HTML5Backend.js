@@ -86,12 +86,7 @@ export default class HTML5Backend {
   addTopCaptureEventListeners(target) {
     if (!target.dragDropTopCaptureRef) {
       target.dragDropTopCaptureRef = 0;
-      target.addEventListener('dragstart', this.handleTopDragStartCapture, true);
-      target.addEventListener('dragend', this.handleTopDragEndCapture, true);
-      target.addEventListener('dragenter', this.handleTopDragEnterCapture, true);
-      target.addEventListener('dragleave', this.handleTopDragLeaveCapture, true);
-      target.addEventListener('dragover', this.handleTopDragOverCapture, true);
-      target.addEventListener('drop', this.handleTopDropCapture, true);
+      this.addEventListeners(target);
     }
     target.dragDropTopCaptureRef++;
   }
@@ -99,12 +94,7 @@ export default class HTML5Backend {
   removeTopCaptureEventListeners(target) {
     target.dragDropTopCaptureRef && target.dragDropTopCaptureRef--;
     if (!target.dragDropTopCaptureRef) {
-      target.removeEventListener('dragstart', this.handleTopDragStartCapture, true);
-      target.removeEventListener('dragend', this.handleTopDragEndCapture, true);
-      target.removeEventListener('dragenter', this.handleTopDragEnterCapture, true);
-      target.removeEventListener('dragleave', this.handleTopDragLeaveCapture, true);
-      target.removeEventListener('dragover', this.handleTopDragOverCapture, true);
-      target.removeEventListener('drop', this.handleTopDropCapture, true);
+      this.removeEventListeners(target);
     }
   }
 
@@ -300,12 +290,6 @@ export default class HTML5Backend {
 
   handleDragStart(e, sourceId) {
     this.dragStartSourceIds.unshift(sourceId);
-
-    // NOTE: parent window will not receive event from iframe,
-    // so we should call handle directly
-    if (isInIframe(e.target)) {
-      this.handleTopDragStart(e);
-    }
   }
 
   handleTopDragStart(e) {
@@ -425,12 +409,6 @@ export default class HTML5Backend {
 
   handleDragEnter(e, targetId) {
     this.dragEnterTargetIds.unshift(targetId);
-
-    // NOTE: parent window will not receive event from iframe,
-    // so we should call handle directly
-    if (isInIframe(e.target)) {
-      this.handleTopDragEnter(e);
-    }
   }
 
   handleTopDragEnter(e) {
@@ -469,12 +447,6 @@ export default class HTML5Backend {
 
   handleDragOver(e, targetId) {
     this.dragOverTargetIds.unshift(targetId);
-
-    // NOTE: parent window will not receive event from iframe,
-    // so we should call handle directly
-    if (isInIframe(e.target)) {
-      this.handleTopDragOver(e);
-    }
   }
 
   handleTopDragOver(e) {
@@ -542,12 +514,6 @@ export default class HTML5Backend {
 
   handleDrop(e, targetId) {
     this.dropTargetIds.unshift(targetId);
-
-    // NOTE: parent window will not receive event from iframe,
-    // so we should call handle directly
-    if (isInIframe(e.target)) {
-      this.handleTopDrop(e);
-    }
   }
 
   handleTopDrop(e) {
