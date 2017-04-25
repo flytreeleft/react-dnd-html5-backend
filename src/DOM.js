@@ -8,7 +8,7 @@ export function isNodeInDoc(node) {
 }
 
 export function isInIframe(node) {
-  var win = getWindow(node);
+  var win = isIframe(node) ? getWindow(node.ownerDocument) : getWindow(node);
   return !!win && win.top !== win;
 }
 
@@ -42,7 +42,7 @@ export function getDocument(target) {
 }
 
 export function getIframeElement(node) {
-  var win = getWindow(node);
+  var win = isIframe(node) ? getWindow(node.ownerDocument) : getWindow(node);
 
   return win ? win.frameElement : null;
 }

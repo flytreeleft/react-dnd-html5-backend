@@ -2,7 +2,7 @@ import defaults from 'lodash/defaults';
 import shallowEqual from './shallowEqual';
 import EnterLeaveCounter from './EnterLeaveCounter';
 import { isFirefox } from './BrowserDetector';
-import { getNodeClientOffset, getEventClientOffset, getDragPreviewOffset } from './OffsetUtils';
+import { getNodeClientOffset, getEventClientOffset, getEventOffset, getDragPreviewOffset } from './OffsetUtils';
 import { createNativeDragSource, matchNativeItemType } from './NativeDragSources';
 import * as NativeTypes from './NativeTypes';
 import { isInIframe, isNodeInDoc, getWindow } from './DOM';
@@ -316,13 +316,11 @@ export default class HTML5Backend {
       return;
     }
 
-    const clientOffset = getEventClientOffset(e);
-
     // Don't publish the source just yet (see why below)
     this.actions.beginDrag(dragStartSourceIds, {
       publishSource: false,
       getSourceClientOffset: this.getSourceClientOffset,
-      clientOffset
+      getEventOffset: () => getEventOffset(e)
     });
 
     const { dataTransfer } = e;
@@ -338,6 +336,7 @@ export default class HTML5Backend {
         const dragPreview = this.sourcePreviewNodes[sourceId] || sourceNode;
         const { anchorX, anchorY } = this.getCurrentSourcePreviewNodeOptions();
         const anchorPoint = { anchorX, anchorY };
+        const clientOffset = getEventClientOffset(e);
         const dragPreviewOffset = getDragPreviewOffset(
           sourceNode,
           dragPreview,
@@ -449,7 +448,7 @@ export default class HTML5Backend {
       // will still happily dispatch `dragover` despite target being no longer
       // there. The easy solution is to only fire `hover` in `dragover` on FF.
       this.actions.hover(dragEnterTargetIds, {
-        clientOffset: getEventClientOffset(e)
+        getEventOffset: () => getEventOffset(e)
       });
     }
 
@@ -491,7 +490,7 @@ export default class HTML5Backend {
     }
 
     this.actions.hover(dragOverTargetIds, {
-      clientOffset: getEventClientOffset(e)
+      getEventOffset: () => getEventOffset(e)
     });
 
     const canDrop = dragOverTargetIds.some(
@@ -556,7 +555,7 @@ export default class HTML5Backend {
     this.dropTargetIds = [];
 
     this.actions.hover(dropTargetIds, {
-      clientOffset: getEventClientOffset(e)
+      getEventOffset: () => getEventOffset(e)
     });
     this.actions.drop();
 
