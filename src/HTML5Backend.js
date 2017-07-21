@@ -93,11 +93,14 @@ export default class HTML5Backend {
       target.dragDropTopCaptureRef = 0;
       this.addEventListeners(target);
     }
-    target.dragDropTopCaptureRef++;
+    target.dragDropTopCaptureRef += 1;
   }
 
   removeTopCaptureEventListeners(target) {
-    target.dragDropTopCaptureRef && target.dragDropTopCaptureRef--;
+    if (target.dragDropTopCaptureRef) {
+      target.dragDropTopCaptureRef -= 1;
+    }
+
     if (!target.dragDropTopCaptureRef) {
       this.removeEventListeners(target);
     }
@@ -124,11 +127,15 @@ export default class HTML5Backend {
     node.addEventListener('dragstart', handleDragStart);
     node.addEventListener('selectstart', handleSelectStart);
 
-    var iframe = isInIframe(node) ? getWindow(node) : null;
-    iframe && this.addTopCaptureEventListeners(iframe);
+    const iframe = isInIframe(node) ? getWindow(node) : null;
+    if (iframe) {
+      this.addTopCaptureEventListeners(iframe);
+    }
 
     return () => {
-      iframe && this.removeTopCaptureEventListeners(iframe);
+      if (iframe) {
+        this.removeTopCaptureEventListeners(iframe);
+      }
 
       delete this.sourceNodes[sourceId];
       delete this.sourceNodeOptions[sourceId];
@@ -148,11 +155,15 @@ export default class HTML5Backend {
     node.addEventListener('dragover', handleDragOver);
     node.addEventListener('drop', handleDrop);
 
-    var iframe = isInIframe(node) ? getWindow(node) : null;
-    iframe && this.addTopCaptureEventListeners(iframe);
+    const iframe = isInIframe(node) ? getWindow(node) : null;
+    if (iframe) {
+      this.addTopCaptureEventListeners(iframe);
+    }
 
     return () => {
-      iframe && this.removeTopCaptureEventListeners(iframe);
+      if (iframe) {
+        this.removeTopCaptureEventListeners(iframe);
+      }
 
       node.removeEventListener('dragenter', handleDragEnter);
       node.removeEventListener('dragover', handleDragOver);
@@ -309,7 +320,7 @@ export default class HTML5Backend {
     this.actions.beginDrag(dragStartSourceIds, {
       publishSource: false,
       getSourceClientOffset: this.getSourceClientOffset,
-      getEventOffset: () => getEventOffset(e)
+      getEventOffset: () => getEventOffset(e),
     });
 
     const { dataTransfer } = e;
@@ -432,7 +443,7 @@ export default class HTML5Backend {
       // will still happily dispatch `dragover` despite target being no longer
       // there. The easy solution is to only fire `hover` in `dragover` on FF.
       this.actions.hover(dragEnterTargetIds, {
-        getEventOffset: () => getEventOffset(e)
+        getEventOffset: () => getEventOffset(e),
       });
     }
 
@@ -468,7 +479,7 @@ export default class HTML5Backend {
     }
 
     this.actions.hover(dragOverTargetIds, {
-      getEventOffset: () => getEventOffset(e)
+      getEventOffset: () => getEventOffset(e),
     });
 
     const canDrop = dragOverTargetIds.some(
@@ -527,7 +538,7 @@ export default class HTML5Backend {
     this.dropTargetIds = [];
 
     this.actions.hover(dropTargetIds, {
-      getEventOffset: () => getEventOffset(e)
+      getEventOffset: () => getEventOffset(e),
     });
     this.actions.drop();
 

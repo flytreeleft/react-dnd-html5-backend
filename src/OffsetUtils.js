@@ -13,26 +13,27 @@ function getElement(node) {
 }
 
 function getIframeZoomFactor(iframe) {
-  var win = getWindow(iframe);
-  var viewWidth = iframe.getBoundingClientRect().width;
-  var actualWidth = parseFloat(win.getComputedStyle(iframe).width);
+  const win = getWindow(iframe);
+  const viewWidth = iframe.getBoundingClientRect().width;
+  const actualWidth = parseFloat(win.getComputedStyle(iframe).width);
   return round(viewWidth / actualWidth, 2);
 }
 
 function offsetToPage(node, untilToTopWin) {
-  var el = getElement(node);
+  let el = getElement(node);
   if (!el) {
     return null;
   }
 
-  var source = el;
-  var offset = {x: source.offsetLeft, y: source.offsetTop};
+  const source = el;
+  const offset = { x: source.offsetLeft, y: source.offsetTop };
   // https://www.kirupa.com/html5/get_element_position_using_javascript.htm
-  while ((el = el.offsetParent)) {
+  while (el && el.offsetParent) {
+    el = el.offsetParent;
     if (el.tagName === 'BODY') {
       // deal with browser quirks with body/window/document and page scroll
-      var scrollLeft = el.scrollLeft || document.documentElement.scrollLeft;
-      var scrollTop = el.scrollTop || document.documentElement.scrollTop;
+      const scrollLeft = el.scrollLeft || document.documentElement.scrollLeft;
+      const scrollTop = el.scrollTop || document.documentElement.scrollTop;
 
       offset.x += el.offsetLeft - scrollLeft + el.clientLeft;
       offset.y += el.offsetTop - scrollTop + el.clientTop;
@@ -44,9 +45,9 @@ function offsetToPage(node, untilToTopWin) {
   }
 
   if (untilToTopWin && isInIframe(source)) {
-    var iframe = getIframeElement(source);
-    var zoom = getIframeZoomFactor(iframe);
-    var iframeOffset = offsetToPage(iframe, untilToTopWin) || {x: 0, y: 0};
+    const iframe = getIframeElement(source);
+    const zoom = getIframeZoomFactor(iframe);
+    const iframeOffset = offsetToPage(iframe, untilToTopWin) || { x: 0, y: 0 };
 
     offset.x = offset.x * zoom + iframeOffset.x;
     offset.y = offset.y * zoom + iframeOffset.y;
@@ -55,18 +56,18 @@ function offsetToPage(node, untilToTopWin) {
 }
 
 function offsetToViewport(node, untilToTopWin) {
-  var el = getElement(node);
+  const el = getElement(node);
   if (!el) {
     return null;
   }
 
-  var {top, left} = el.getBoundingClientRect();
-  var offset = {x: left, y: top};
+  const { top, left } = el.getBoundingClientRect();
+  const offset = { x: left, y: top };
 
   if (untilToTopWin && isInIframe(el)) {
-    var iframe = getIframeElement(el);
-    var iframeOffset = offsetToViewport(iframe, untilToTopWin) || {x: 0, y: 0};
-    var zoom = getIframeZoomFactor(iframe);
+    const iframe = getIframeElement(el);
+    const iframeOffset = offsetToViewport(iframe, untilToTopWin) || { x: 0, y: 0 };
+    const zoom = getIframeZoomFactor(iframe);
 
     offset.x = offset.x * zoom + iframeOffset.x;
     offset.y = offset.y * zoom + iframeOffset.y;
@@ -75,36 +76,36 @@ function offsetToViewport(node, untilToTopWin) {
 }
 
 function eventOffset(e, relativeToPage, untilToTopWin) {
-  var offset = {x: 0, y: 0};
-  var el = e.target || e.srcElement;
+  let offset = { x: 0, y: 0 };
+  const el = e.target || e.srcElement;
 
   if (relativeToPage) {
-    var win = getWindow(el);
+    const win = getWindow(el);
     // NOTE: Event.pageX/pageY will not return the correct value in iframe,
     // so using Event.offsetX/offsetY (which is relative to the element content)
     // plus the offset and border of target element.
-    var elOffset = offsetToPage(el);
-    var computedStyle = win.getComputedStyle(el);
-    var elBorder = {
+    const elOffset = offsetToPage(el);
+    const computedStyle = win.getComputedStyle(el);
+    const elBorder = {
       left: parseInt(computedStyle.borderLeftWidth, 10),
-      top: parseInt(computedStyle.borderTopWidth, 10)
+      top: parseInt(computedStyle.borderTopWidth, 10),
     };
     offset = {
       x: e.offsetX + elOffset.x + elBorder.left,
-      y: e.offsetY + elOffset.y + elBorder.top
+      y: e.offsetY + elOffset.y + elBorder.top,
     };
   } else {
     offset = {
       x: e.clientX,
-      y: e.clientY
+      y: e.clientY,
     };
   }
 
   if (untilToTopWin && isInIframe(el)) {
-    var getOffset = relativeToPage ? offsetToPage : offsetToViewport;
-    var iframe = getIframeElement(el);
-    var iframeOffset = getOffset(iframe, untilToTopWin) || {x: 0, y: 0};
-    var zoom = getIframeZoomFactor(iframe);
+    const getOffset = relativeToPage ? offsetToPage : offsetToViewport;
+    const iframe = getIframeElement(el);
+    const iframeOffset = getOffset(iframe, untilToTopWin) || { x: 0, y: 0 };
+    const zoom = getIframeZoomFactor(iframe);
 
     offset.x = offset.x * zoom + iframeOffset.x;
     offset.y = offset.y * zoom + iframeOffset.y;
@@ -114,7 +115,7 @@ function eventOffset(e, relativeToPage, untilToTopWin) {
 }
 
 export function getNodeClientOffset(node) {
-  var el = getElement(node);
+  const el = getElement(node);
   if (!el) {
     return null;
   }
@@ -136,7 +137,7 @@ export function getEventOffset(e) {
     clientOffset: getEventClientOffset(e),
     clientOffsetUntilToTop: getEventClientOffset(e, true),
     pageOffset: getEventPageOffset(e),
-    pageOffsetUntilToTop: getEventPageOffset(e, true)
+    pageOffsetUntilToTop: getEventPageOffset(e, true),
   };
 }
 
